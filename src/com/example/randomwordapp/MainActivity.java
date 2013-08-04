@@ -117,71 +117,42 @@ public class MainActivity extends Activity {
 			} catch (Exception e) {
 				Log.d("JSOUP ERROR", e.getMessage());
 			}
-			  
-			 //each dt contains a word, kanij, and hiragana
-			 Elements kanjiTags = webDoc.select("font[size*=7]");
-			 
-			 tempWords = new RandomWord[5];
-			 int i = 0;
-			 
-			 for(Element currTag : kanjiTags){
-				 String kanji = currTag.select("font").first().text();
-				 tempWords[i] = new RandomWord();
-				 tempWords[i].setKanji(kanji);
-				 Log.d(tag, tempWords[i].getKanji());
-				 if(++i >= 5) break;
-			 }//for
-			 
-			 	//The following code gets hiragana and english from tangorin
-			 String firstHalf = "http://jisho.org/words?jap=";
-			 String secondHalf = "&eng=&dict=edict";
-			 
-			 for(i = 0; i < 5; i++){
-				 try{
-					 jisho = Jsoup.connect("http://www.tangorin.com/general/" + tempWords[i].getKanji()).get();
-				 } catch (Exception e){
-					 Log.d("JISHO CONNECTION:", e.getMessage());
-				 }
-				 
-				 Element kana = null;
-				 Element meaning = null;
-				  
-				 try{
-					 kana = jisho.getElementsByClass("kana").first();
-					 //meaning = jisho.select("td.meanings_column").first();
-				 } catch (Exception e){
-					 Log.d(tag, e.getMessage()); 
-				 }
-					 String hiragana = "NONE";
-					 try{
-						 hiragana = kana.text();
-					 } catch (Exception e){
-						 Log.d(tag, e.getMessage());
-					 }
-					 String english = "hello ";//meaning.text();
-					 Log.d(tag, hiragana);
-					 
-					 tempWords[i].setEnglish(english);
-					 tempWords[i].setHiragana(hiragana);
-			 }//for
-			 
+			
+			Elements kanjiTags = webDoc.select("font[size*=7]");
+			Elements selectTags = webDoc.select("select");
+			
+			tempWords = new RandomWord[5];
+			int x = 0;
+			for(int i = 0; i < 10; i += 2){
+				tempWords[x] = new RandomWord(kanjiTags.get(x).text(),
+											  selectTags.get(i).getElementsByTag("option").get(1).ownText(),
+											  selectTags.get(i + 1).getElementsByTag("option").get(1).ownText());
+				x++;
+			}//for()
+			
+			Log.d("WORD CHOSEN:", "#4 - " + tempWords[4].getKanji() + " : " + tempWords[4].getHiragana());
+			
 			return tempWords;
 		}//doInBackground
 		
 		@Override
 		protected void onPostExecute(RandomWord[] result) {
 			Log.d("ONPOSTEXECUTE", "Was called");
+			int i = 0;
 			for(RandomWord currResult : result){ 
 				words.add(currResult);
-				Log.d("RESULT INFO:", currResult.getEnglish());
+				Log.d("RESULT INFO:", words.get(i).getEnglish());
+				i++;
 			}//for()
 			
-			if(result == null){
-				Log.d("RESULT WORD ARRAY WAS NULL", "ERROR!");
+			if(words == null){
+				Log.d("ERROR!", "RESULT WORD ARRAY WAS NULL");
 				return;
 			}
 			
-			CustomAdapter adapter = new CustomAdapter(MainActivity.this, words, showTranslation);
+			Activity currActivity = MainActivity.this;
+			CustomAdapter adapter = new CustomAdapter(currActivity.getApplicationContext(), words, showTranslation);
+			Log.d("IS IT NULL?", "" + (adapter == null));
 			wordListViewLV.setAdapter(adapter);
 		}//onPostExecute()
     	

@@ -11,46 +11,31 @@
     tools:context=".MainActivity" >
 
     <TableRow
-        android:id="@+id/tableRow1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" >
+        android:id="@+id/wordRow"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" >
 
-        <TableLayout
+        <ListView
+            android:id="@+id/wordList"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1" >
+        </ListView>
+    </TableRow>
 
-            <TableRow
-                android:id="@+id/wordRow"
-                android:layout_width="fill_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1" >
+    <TableRow
+        android:id="@+id/buttonRow"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" >
 
-                <ListView
-                    android:id="@+id/wordList"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1" >
-                </ListView>
-            </TableRow>
-
-            <TableRow
-                android:id="@+id/buttonRow"
-                android:layout_width="fill_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1" >
-
-                <Button
-                    android:id="@+id/moreWords"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="More Words" />
-
-            </TableRow>
-
-        </TableLayout>
-
+        <Button
+            android:id="@+id/moreWords"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="More Words" />
     </TableRow>
 
 </TableLayout>
