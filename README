@@ -1,2 +1,6 @@
 EDITS (8/4/13):
 I've made it so the JSoup code actually works. Doesn't update the UI for the user, though.
+
+EDITS (8/4/13)[1]:
+UI is updated, and shows kanji with hiragana below. If you click a word, it shows the english translation where hiragana usually is.
+

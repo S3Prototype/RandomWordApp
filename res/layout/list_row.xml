@@ -2,7 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" >
+    android:layout_height="match_parent"
+    android:padding="15dp" >
 
     <TableRow
         android:id="@+id/mainWordRow"
@@ -21,6 +22,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:text="Large Text"
+                android:textSize="20sp"
                 android:textAppearance="?android:attr/textAppearanceLarge" />
 
         </FrameLayout>

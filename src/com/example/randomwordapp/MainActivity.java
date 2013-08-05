@@ -9,6 +9,7 @@ import org.jsoup.select.Elements;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -68,16 +69,27 @@ public class MainActivity extends Activity {
     	private String kanji;
     	private String hiragana;
     	private String english;
+    	private boolean showDef;
     	
-    	public RandomWord(String kanji, String hiragana, String english) {
+    	public boolean ShowDef() {
+			return showDef;
+		}
+
+		public void setShowDef(boolean showDef) {
+			this.showDef = showDef;
+		}
+
+		public RandomWord(String kanji, String hiragana, String english) {
     		super();
     		this.kanji = kanji;
     		this.hiragana = hiragana;
     		this.english = english;
+    		showDef = false;
     	}
     	
 		public RandomWord() {
 			// TODO Auto-generated constructor stub
+			showDef = false;
 		}
 
 		public String getKanji() {
@@ -173,11 +185,30 @@ public class MainActivity extends Activity {
 				kanji.setText(result[i].getKanji());
 				def.setText(result[i].getHiragana());
 				
+				kanji.setTextColor(Color.BLACK);
+				def.setTextColor(Color.BLACK);
+				
 				TableRow newRow = new TableRow(context);
 				
 				newRow.addView(listRow);
+				newRow.setId(i);
+				def.setTag(newRow.getId());
 				
-				TableLayout viewTable = (TableLayout) findViewById(R.id.viewTable);
+				final TableLayout viewTable = (TableLayout) findViewById(R.id.viewTable);
+				final RandomWord wordToPass = result[i];
+				
+				newRow.setOnClickListener(new OnClickListener(){
+					public void onClick(View row) {
+						TextView defText = (TextView) viewTable.findViewWithTag(row.getId());
+						if(!wordToPass.ShowDef()){
+							defText.setText(wordToPass.getEnglish());
+							wordToPass.setShowDef(true);
+						} else {
+							defText.setText(wordToPass.getHiragana());
+						}//else
+					}//onClick()
+				});
+				
 				viewTable.addView(newRow);
 			}//for
 		}//onPostExecute()
