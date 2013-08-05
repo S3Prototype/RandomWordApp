@@ -56,25 +56,10 @@ public class CustomAdapter extends BaseAdapter {
         subText = (TextView) convertView.findViewById(R.id.definition);
 
         RandomWord word = words.get(position);
-        mainText.setText(word.getKanji());
-        subText.setText(word.getHiragana());
+        mainText.setText(word.getEnglish());
+        subText.setText(word.getEnglish());
         // Same for description and link
         return convertView;
-/*		View finalView = (convertView == null) ?
-					inflater.inflate(R.layout.list_row, null) : convertView;
-					
-		TextView mainText = (TextView) finalView.findViewById(R.id.mainWord);
-		TextView minorText = (TextView) finalView.findViewById(R.id.definition);
-		
-		if(!showTranslation){
-			mainText.setText(words.get(position).getKanji());
-			minorText.setText(words.get(position).getHiragana());
-		} else {
-			mainText.setText(words.get(position).getHiragana());
-			minorText.setText(words.get(position).getEnglish());
-		}//else
-		
-		return finalView;*/
 	}
 
 }
