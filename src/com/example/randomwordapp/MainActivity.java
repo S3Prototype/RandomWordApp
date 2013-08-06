@@ -1,22 +1,33 @@
 package com.example.randomwordapp;
 
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
+import org.jsoup.UnsupportedMimeTypeException;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
 import android.app.Activity;
+import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -30,21 +41,36 @@ public class MainActivity extends Activity {
 	Button moreWords;
 	
 	Context context;
+	boolean moreWordsPressed = false;
+	
+	LayoutInflater inflater;
+	
+	DisplayMetrics metric;
+	int screenWidth;
+	int screenHeight;
+	
+	boolean hasBeenInitialized = false;
+	
+	int addWordsCount = 0;//Number of times user added new words
 	
 	ArrayList <RandomWord> words = null;
 	boolean showTranslation = false;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+    	requestWindowFeature(Window.FEATURE_NO_TITLE);
+    	setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         context = getApplicationContext();
-        
+		inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
         moreWords = (Button) findViewById(R.id.moreWords);
         
         moreWords.setOnClickListener(new OnClickListener(){
 			@Override
 			public void onClick(View v) {
+				moreWordsPressed = true;
 				new GetWordsTask().execute();
 			} 
         });
@@ -54,8 +80,22 @@ public class MainActivity extends Activity {
     @Override
 	protected void onResume() {
     	super.onResume();
-    	new GetWordsTask().execute();
+    	metric = getResources().getDisplayMetrics();
+    	screenWidth = metric.widthPixels;
+    	screenHeight = metric.heightPixels;
+    		//This ensures it won't get new words every time onResume is called
+    	if(!hasBeenInitialized){
+    		new GetWordsTask().execute();
+    		hasBeenInitialized = true;
+    	}
+    	
+    	setBackground();
 	}
+    
+    public void setBackground(){
+    	TableLayout main = (TableLayout) findViewById(R.id.table);
+    	main.setBackgroundResource(R.drawable.bg);
+    }
 
 	@Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -63,7 +103,6 @@ public class MainActivity extends Activity {
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
-	
     
     public class RandomWord{
     	private String kanji;
@@ -140,20 +179,61 @@ public class MainActivity extends Activity {
     private class GetWordsTask extends AsyncTask <Void, Void, RandomWord[]> {
     	Document webDoc = null;
     	Document jisho = null;
+    	ProgressDialog dialog;
 		@Override
 		protected void onPreExecute() {
 			words = new ArrayList<RandomWord>();
+			dialog = ProgressDialog.show(MainActivity.this, "お待ちください", "We're getting your words ...");
 		}
+		
+		private String formatEnglish(String englishVal){
+			String english = englishVal;
+			if(english.length() > 30){
+				//If the string is too long, gotta break it up
+				int startingPoint = 0;
+				for(int i = 1; i <= english.length()/30; i++){
+					/** 
+					 * This loop will cut a string at every 30 char interval.
+					 */
+					int closestSpaceIndex = english.substring(startingPoint, (i * 30)).lastIndexOf(" ");
+					if(closestSpaceIndex > 0){
+						String tempEng, tempEng1;
+						tempEng = english.substring(startingPoint, startingPoint + closestSpaceIndex);
+						tempEng1 = english.substring(startingPoint + closestSpaceIndex);
+						String result = tempEng + "\n" + tempEng1;
+						//When startPoing != 0, we need to remember to append the first part of english
+						//as well, or we'll lose it
+						english = (startingPoint == 0) ? result : english.substring(0, startingPoint) + result;
+						startingPoint = i * 30;//Next iteration will cut from here to i * 30
+					}//if
+				}//for()
+			}//if(english.length > 30)
+			return english;
+		}//formatEnglish()
 
 		@Override
 		protected RandomWord[] doInBackground(Void... arg0) {
 			RandomWord tempWords[] = null;
 			String tag = "JSOUP INFO";
-			try {
-				webDoc = Jsoup.connect("http://www.manythings.org/c/r2.cgi/edict").post();
-			} catch (Exception e) {
-				Log.d("JSOUP ERROR", e.getMessage());
-			}
+			webDoc = null;
+			boolean successfullyConnected = false;
+			while(!successfullyConnected){
+				try{
+					webDoc = Jsoup.connect("http://www.manythings.org/c/r2.cgi/edict").post();
+					if(webDoc != null)
+						successfullyConnected = true;
+				} catch (MalformedURLException e){
+					
+				} catch (HttpStatusException e){
+					
+				} catch (UnsupportedMimeTypeException e){
+					
+				} catch (SocketTimeoutException e){
+					
+				} catch (IOException e){
+					
+				}
+			}//while()
 			
 			Elements kanjiTags = webDoc.select("font[size*=7]");
 			Elements selectTags = webDoc.select("select");
@@ -161,38 +241,55 @@ public class MainActivity extends Activity {
 			tempWords = new RandomWord[5];
 			int x = 0;
 			for(int i = 0; i < 10; i += 2){
+				String english = formatEnglish(selectTags.get(i + 1).getElementsByTag("option").get(1).ownText());
+				
+				
 				tempWords[x] = new RandomWord(kanjiTags.get(x).text(),
 											  selectTags.get(i).getElementsByTag("option").get(1).ownText(),
-											  selectTags.get(i + 1).getElementsByTag("option").get(1).ownText());
+											  english);
 				x++;
 			}//for()
 			
 			Log.d("WORD CHOSEN:", "#4 - " + tempWords[4].getKanji() + " : " + tempWords[4].getHiragana());
 			
 			return tempWords;
-		}//doInBackground
+		}//doInBackground 
 		
 		@Override
 		protected void onPostExecute(RandomWord[] result) {
 			Log.d("ONPOSTEXECUTE", "Was called");
 			//fillList(result);
+			if(moreWordsPressed){
+				addWordsCount++;
+				moreWordsPressed = false;
+			}
 			for(int i = 0; i < 5; i++){
-				LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 				LinearLayout listRow = (LinearLayout) inflater.inflate(R.layout.list_row, null);
 				TextView kanji = (TextView) listRow.findViewById(R.id.mainWord);
-				TextView def = (TextView) listRow.findViewById(R.id.definition);
+				TextView def = (TextView) listRow.findViewById(R.id.definition); 
+				TextView number = (TextView) listRow.findViewById(R.id.number); 
 				
 				kanji.setText(result[i].getKanji());
 				def.setText(result[i].getHiragana());
 				
-				kanji.setTextColor(Color.BLACK);
-				def.setTextColor(Color.BLACK);
+				Typeface font = Typeface.createFromAsset(context.getAssets(), "fonts/epmgobld.ttf");
+				
+				kanji.setTypeface(font);
+				//kanji.setTextColor(Color.RED);
+				kanji.setShadowLayer(5, 2, 3, Color.BLACK);
+				def.setTypeface(font);
+				
+				number.setTypeface(font);
+				number.setTextColor(Color.BLACK);
 				
 				TableRow newRow = new TableRow(context);
 				
 				newRow.addView(listRow);
-				newRow.setId(i);
+				int actualIndex = i + (addWordsCount * 5);
+				newRow.setId(actualIndex);
 				def.setTag(newRow.getId());
+				
+				number.setText("(" + (actualIndex + 1) + ")");
 				
 				final TableLayout viewTable = (TableLayout) findViewById(R.id.viewTable);
 				final RandomWord wordToPass = result[i];
@@ -201,16 +298,22 @@ public class MainActivity extends Activity {
 					public void onClick(View row) {
 						TextView defText = (TextView) viewTable.findViewWithTag(row.getId());
 						if(!wordToPass.ShowDef()){
-							defText.setText(wordToPass.getEnglish());
+							defText.setText(wordToPass.getHiragana() + "\n" + wordToPass.getEnglish());
+							defText.setTextColor(Color.BLACK);
 							wordToPass.setShowDef(true);
 						} else {
 							defText.setText(wordToPass.getHiragana());
+							defText.setTextColor(Color.WHITE);
+							wordToPass.setShowDef(false);
 						}//else
 					}//onClick()
 				});
 				
 				viewTable.addView(newRow);
 			}//for
+			
+			//finally dismiss the progress dialog
+			dialog.dismiss();
 		}//onPostExecute()
     	
     }//GetWordsTask class
